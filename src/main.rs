@@ -2,27 +2,29 @@
 
 mod pixel;
 
-use sdl2::pixels::Color;
+extern crate sdl2;
+
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::mouse;
+use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use sdl2::mouse;
 use std::time::Duration;
-
-extern crate sdl2; 
 
 pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
- 
-    let window = video_subsystem.window("Pixel Simulation", 1200, 600)
+
+    let window = video_subsystem
+        .window("Pixel Simulation", 100, 100)
         .position_centered()
         .build()
         .unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
+    canvas.set_scale(2.0, 2.0);
     let mut events = sdl_context.event_pump().unwrap();
     let mut pixels: Vec<pixel::Pixel> = Vec::new();
 
@@ -31,23 +33,41 @@ pub fn main() {
         canvas.clear();
         for event in events.poll_iter() {
             match event {
-                Event::Quit {..} |
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    break 'running
-                },
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => break 'running,
                 _ => {}
             }
         }
+
+        if events
+            .mouse_state()
+            .is_mouse_button_pressed(mouse::MouseButton::Left)
+        {
+            let state = events.mouse_state();
+            let &mut new_pixel =
+                &mut pixel::Pixel::new(state.x()/canvas.scale().0 as i32, state.y()/canvas.scale().0 as i32, pixel::MaterialId::Sand);
+            pixels.push(new_pixel);
+        }
+
         for y in (0..canvas.window().drawable_size().1 as i32).rev() {
             for x in (0..canvas.window().drawable_size().0 as i32).rev() {
-                let mat_id = pixel::get_pixel(Point::new(x, y), &pixels);
+                let mat_id = pixel::get_pixel_id(Point::new(x, y), &pixels);
                 match mat_id {
-                    pixel::MaterialId::Sand => pixel::update_sand(x as u32, y as u32),
-                    pixel::MaterialId::Water => pixel::update_water(x as u32, y as u32),
+                    pixel::MaterialId::Sand => pixel::update_sand(x, y, &mut pixels),
+                    pixel::MaterialId::Water => pixel::update_water(x, y, &mut pixels),
+                    pixel::MaterialId::Acid => pixel::update_acid(x, y, &mut pixels),
                     _ => {}
                 }
             }
         }
+
+        for mut i in &mut pixels {
+            pixel::RenderPixel::draw_pixel(&mut canvas, &mut i);
+        }
+
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
