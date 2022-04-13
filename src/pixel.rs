@@ -1,11 +1,7 @@
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
-use sdl2::mouse;
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use std::time::Duration;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum MaterialId {
@@ -49,20 +45,6 @@ impl Pixel {
                         r: 0,
                         g: 0,
                         b: 255,
-                        a: 125,
-                    },
-                    point: Point::new(x, y),
-                    moving: false,
-                };
-            }
-            MaterialId::Acid => {
-                return Pixel {
-                    id,
-                    speed: 2,
-                    color: Color {
-                        r: 0,
-                        g: 255,
-                        b: 0,
                         a: 125,
                     },
                     point: Point::new(x, y),
@@ -144,11 +126,23 @@ pub fn update_sand(x: i32, y: i32, pixels: &mut Vec<Pixel>) {
 }
 
 pub fn update_water(x: i32, y: i32, pixels: &mut Vec<Pixel>) {
+    let mut pixels_clone = pixels.clone();
     let mut pixel = get_pixel(Point::new(x, y), pixels).unwrap();
-    pixel.point.y += 1;
-}
-
-pub fn update_acid(x: i32, y: i32, pixels: &mut Vec<Pixel>) {
-    let mut pixel = get_pixel(Point::new(x, y), pixels).unwrap();
-    pixel.point.y += 1;
+    if get_pixel_id(Point::new(x, y+1), &pixels_clone) == MaterialId::Empty {
+        pixel.point.y += 1;
+    }
+    else if get_pixel_id(Point::new(x-1, y+1), &pixels_clone) == MaterialId::Empty {
+        pixel.point.x -= 1;
+        pixel.point.y += 1;
+    } 
+    else if get_pixel_id(Point::new(x+1, y+1), &pixels_clone) == MaterialId::Empty {
+        pixel.point.x += 1;
+        pixel.point.y += 1;
+    }
+    else if get_pixel_id(Point::new(x-1, y), &pixels_clone) == MaterialId::Empty {
+        pixel.point.x -= 1;
+    }
+    else if get_pixel_id(Point::new(x+1, y), &pixels_clone) == MaterialId::Empty {
+        pixel.point.x += 1;
+    }
 }

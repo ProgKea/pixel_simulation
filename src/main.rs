@@ -18,15 +18,15 @@ pub fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("Pixel Simulation", 100, 100)
+        .window("Pixel Simulation", 50, 50)
         .position_centered()
         .build()
         .unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
-    canvas.set_scale(2.0, 2.0);
     let mut events = sdl_context.event_pump().unwrap();
     let mut pixels: Vec<pixel::Pixel> = Vec::new();
+    let mut index_id: pixel::MaterialId = pixel::MaterialId::Sand;
 
     'running: loop {
         canvas.set_draw_color(Color::RGB(40, 40, 40));
@@ -38,6 +38,18 @@ pub fn main() {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => break 'running,
+                Event::KeyDown {
+                    keycode: Some(Keycode::S),
+                    ..
+                } => {
+                    index_id = pixel::MaterialId::Sand;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::W),
+                    ..
+                } => {
+                    index_id = pixel::MaterialId::Water;
+                }
                 _ => {}
             }
         }
@@ -47,8 +59,11 @@ pub fn main() {
             .is_mouse_button_pressed(mouse::MouseButton::Left)
         {
             let state = events.mouse_state();
-            let &mut new_pixel =
-                &mut pixel::Pixel::new(state.x()/canvas.scale().0 as i32, state.y()/canvas.scale().0 as i32, pixel::MaterialId::Sand);
+            let &mut new_pixel = &mut pixel::Pixel::new(
+                state.x() / canvas.scale().0 as i32,
+                state.y() / canvas.scale().0 as i32,
+                index_id,
+            );
             pixels.push(new_pixel);
         }
 
@@ -58,7 +73,6 @@ pub fn main() {
                 match mat_id {
                     pixel::MaterialId::Sand => pixel::update_sand(x, y, &mut pixels),
                     pixel::MaterialId::Water => pixel::update_water(x, y, &mut pixels),
-                    pixel::MaterialId::Acid => pixel::update_acid(x, y, &mut pixels),
                     _ => {}
                 }
             }
