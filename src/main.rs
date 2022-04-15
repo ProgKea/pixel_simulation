@@ -18,12 +18,16 @@ pub fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("Pixel Simulation", 50, 50)
+        .window("Pixel Simulation", pixel::WIDTH, pixel::HEIGHT)
         .position_centered()
         .build()
         .unwrap();
 
+    // rendering options
     let mut canvas = window.into_canvas().build().unwrap();
+    canvas.set_scale(pixel::SCALE as f32, pixel::SCALE as f32);
+    canvas.set_integer_scale(true);
+
     let mut events = sdl_context.event_pump().unwrap();
     let mut pixels: Vec<pixel::Pixel> = Vec::new();
     let mut index_id: pixel::MaterialId = pixel::MaterialId::Sand;
@@ -39,17 +43,21 @@ pub fn main() {
                     ..
                 } => break 'running,
                 Event::KeyDown {
+                    keycode: Some(Keycode::R),
+                    ..
+                } => pixels.clear(),
+                Event::KeyDown {
                     keycode: Some(Keycode::S),
                     ..
-                } => {
-                    index_id = pixel::MaterialId::Sand;
-                }
+                } => index_id = pixel::MaterialId::Sand,
                 Event::KeyDown {
                     keycode: Some(Keycode::W),
                     ..
-                } => {
-                    index_id = pixel::MaterialId::Water;
-                }
+                } => index_id = pixel::MaterialId::Water,
+                Event::KeyDown {
+                    keycode: Some(Keycode::H),
+                    ..
+                } => index_id = pixel::MaterialId::Wood,
                 _ => {}
             }
         }
@@ -59,12 +67,19 @@ pub fn main() {
             .is_mouse_button_pressed(mouse::MouseButton::Left)
         {
             let state = events.mouse_state();
-            let &mut new_pixel = &mut pixel::Pixel::new(
-                state.x() / canvas.scale().0 as i32,
-                state.y() / canvas.scale().0 as i32,
-                index_id,
-            );
-            pixels.push(new_pixel);
+            if pixel::get_pixel_id(
+                Point::new(state.x() / pixel::SCALE, state.y() / pixel::SCALE),
+                &mut pixels,
+            ) == pixel::MaterialId::Empty
+            {
+//                let &mut new_pixel = &mut pixel::Pixel::new(
+//                    state.x() / pixel::SCALE,
+//                    state.y() / pixel::SCALE,
+//                    index_id,
+//                );
+//                pixels.push(new_pixel);
+                pixel::circle_vector(state.x()/pixel::SCALE, state.y()/pixel::SCALE, 4, &mut pixels, index_id);
+            }
         }
 
         for y in (0..canvas.window().drawable_size().1 as i32).rev() {
