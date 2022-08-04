@@ -3,7 +3,7 @@ use sdl2::rect::Point;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
-pub const SCALE: i32 = 1;
+pub const SCALE: i32 = 3;
 pub const WIDTH: u32 = SCALE as u32 * 100;
 pub const HEIGHT: u32 = SCALE as u32 * 50;
 
